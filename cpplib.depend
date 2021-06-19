@@ -1,0 +1,14 @@
+# depslib dependency file v1.0
+1624102197 source:c:\users\mike brown\documents\projects\cpplib\lexer.cc
+	"allocator.hh"
+	<string_view>
+	<iostream>
+
+1624101999 c:\users\mike brown\documents\projects\cpplib\allocator.hh
+	<cstdlib>
+	<cstdio>
+	<new>
+	<utility>
+	<cstring>
+	<utility>
+
