@@ -29,13 +29,34 @@
 					<Add option="-s" />
 				</Linker>
 			</Target>
+			<Target title="Build Duck">
+				<Option output="bin/Release/cpplib" prefix_auto="1" extension_auto="1" />
+				<Option object_output="P:/obj/Release/" />
+				<Option type="1" />
+				<Option compiler="clang" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-Wno-c++98-compat" />
+					<Add option="-DNDEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Weverything" />
 			<Add option="-std=c++20" />
 		</Compiler>
-		<Unit filename="allocator.hh" />
-		<Unit filename="lexer.cc" />
+		<Unit filename="allocator.hh">
+			<Option target="CLI Debug" />
+			<Option target="CLI Release" />
+		</Unit>
+		<Unit filename="example_lexer.cc">
+			<Option target="CLI Debug" />
+			<Option target="CLI Release" />
+		</Unit>
+		<Unit filename="example_quack.cc" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>

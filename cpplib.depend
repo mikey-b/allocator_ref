@@ -12,3 +12,12 @@
 	<cstring>
 	<utility>
 
+1624102197 source:c:\users\mike brown\documents\projects\cpplib\example_lexer.cc
+	"allocator.hh"
+	<string_view>
+	<iostream>
+
+1624113687 source:c:\users\mike brown\documents\projects\cpplib\example_quack.cc
+	"allocator.hh"
+	<cstdio>
+
