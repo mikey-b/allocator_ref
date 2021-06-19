@@ -38,11 +38,6 @@ struct blk {
     void* operator&() {
         return ptr;
     }
-
-    template<typename U>
-    U* as() {
-		return static_cast<U*>(ptr);
-    }
 };
 
 // --- Global Allocator Interface ---
