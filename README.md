@@ -95,7 +95,10 @@ All reference handles have value semantics by default. Unless you explicitly ask
 ref< T > will automatically clean up the reference object, as standard with RAII memory management.
 
 ##### Uninitalised ref< T >, shared_ref< T > and weak_ref< T >
-The literal value `uninitialised{}` is provided to express an uninitialised reference.
+The literal value `uninitialised{}` is provided to express an uninitialised reference. E.g.
+```cpp
+	ref<duck> no_duck_yet = uninitialised{};
+```
 
 ### Provided Examples
 This repository provides examples and benchmarking.
