@@ -43,15 +43,14 @@ struct blk {
 // --- Global Allocator Interface ---
 class alloc_t {
  public:
-    virtual blk allocate(size_t size, size_t alignment) = 0;
-    virtual void deallocate(blk& resource) = 0;
+	virtual blk allocate(size_t size, size_t alignment) = 0;
+	virtual void deallocate(blk& resource) = 0;
 	virtual void deallocateAll() = 0;
 
-    virtual bool will_free_on_deallocate(blk& resource) = 0;
-    virtual blk share(blk& resource) = 0;
+	virtual bool will_free_on_deallocate(blk& resource) = 0;
+	virtual blk share(blk& resource) = 0;
 
-    template<class T, class AS = T, typename... Args>
-    ref<AS> make(Args&&...);
+	template<class T, class AS = T, typename... Args> ref<AS> make(Args&&...);
 	virtual ~alloc_t() = default;
 };
 
@@ -63,42 +62,40 @@ struct weak_flag {};
 template<class T>
 class ref {
  protected:
-
-
     blk m_data;
     alloc_t* m_alloc;
     bool m_weak_ref;
 
  public:
-    // --- Constructors ---
-    ref(blk& data, alloc_t* alloc): m_data(data), m_alloc(alloc), m_weak_ref(false) {}
-    ref(blk& data, alloc_t* alloc, weak_flag): m_data(data), m_alloc(alloc), m_weak_ref(true) {}
+	// --- Constructors ---
+	ref(blk& data, alloc_t* alloc): m_data(data), m_alloc(alloc), m_weak_ref(false) {}
+	ref(blk& data, alloc_t* alloc, weak_flag): m_data(data), m_alloc(alloc), m_weak_ref(true) {}
 
-    // --- Initialisation Constructors ---
+	// --- Initialisation Constructors ---
 
-    // --- Assign uninitialised ---
-    ref(uninitialised const&) {
-        m_data = {nullptr, 0};
-        m_alloc = nullptr;
-        m_weak_ref = false;
-    }
+	// --- Assign uninitialised ---
+	ref(uninitialised const&) {
+		m_data = {nullptr, 0};
+		m_alloc = nullptr;
+		m_weak_ref = false;
+	}
 
-    // --- Copy Constructor ---
-    ref(ref const& original) {
+	// --- Copy Constructor ---
+	ref(ref const& original) {
 		assert(m_data.ptr == nullptr);
-        m_weak_ref = false;
-        m_alloc = original.m_alloc;
-        //printf("copy constructor, m_alloc = %p\n", m_alloc);
-        m_data = m_alloc->allocate(sizeof(T), alignof(T));
-        assert(m_data.ptr);
-        auto org_obj = static_cast<T*>(original.m_data.ptr);
-        auto new_obj = static_cast<T*>(m_data.ptr);
-        *new_obj = *org_obj;
-        //new (m_data.ptr) T(*org_obj);
+		m_weak_ref = false;
+		m_alloc = original.m_alloc;
+		//printf("copy constructor, m_alloc = %p\n", m_alloc);
+		m_data = m_alloc->allocate(sizeof(T), alignof(T));
+		assert(m_data.ptr);
+		auto org_obj = static_cast<T*>(original.m_data.ptr);
+		auto new_obj = static_cast<T*>(m_data.ptr);
+		*new_obj = *org_obj;
+		//new (m_data.ptr) T(*org_obj);
 
-        //printf("copied [%p] to [%p]\n", original.m_data.ptr, &m_data);
-        assert(m_alloc);
-    }
+		//printf("copied [%p] to [%p]\n", original.m_data.ptr, &m_data);
+		assert(m_alloc);
+	}
 
     ref& operator=(ref& original) {
         // Clean up the old data we we're holding.
@@ -196,7 +193,7 @@ class ref {
 
 // Theres no such thing as a shared_ref or weak_ref.
 // They are just syntactic tools to convey the type
-// of ref behaviour the construct to.
+// of ref behaviour to construct with.
 template<class T> class shared_ref: public ref<T> {
  public:
     shared_ref(blk data, alloc_t* alloc): ref<T>(data, alloc) {}
@@ -206,7 +203,7 @@ template<class T> class weak_ref: public ref<T> {
     weak_ref(blk data, alloc_t* alloc): ref<T>(data, alloc, weak_flag{}) {}
 };
 
-// --- Default Allocator Methods ---
+// --- Default Allocator Method ---
 template<class T, class AS, typename... Args>
 ref<AS> alloc_t::make(Args&&... args)  {
     static_assert(std::is_base_of<AS,T>::value);
@@ -215,6 +212,8 @@ ref<AS> alloc_t::make(Args&&... args)  {
     return {blk, this};
 }
 
+
+// --- Provided Allocators ---
 class mallocator: public alloc_t {
  public:
     blk allocate(size_t size, size_t alignment) override {
@@ -301,7 +300,7 @@ class RefCounted: public baseAllocator {
         int* count = (int*)((size_t)&block + size);
         *count = 1;
         //printf("count = %d\n", *count);
-        block.m_size = size; // Remove the int overhead
+        block.m_size = size; // Remove the int from the block size, for copying reasons
 
 		object_count+=1;
         return block;
