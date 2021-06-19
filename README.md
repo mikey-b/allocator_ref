@@ -50,7 +50,7 @@ duck_one->quack();
 duck_two->quack();
 ```
 ### Reference Type Handles
-References are represented with the `ref<T>` type. This represents the behaviour of all references. In order to allow the programmer to specify alternative behaviour that is desired (shared, weak), syntax has to be provided.
+Reference handles are represented with the `ref<T>` type. This underline type represents the behaviour of all reference handles. In order to allow the programmer to specify alternative behaviour that is desired (shared, weak), syntax has to be provided.
 #### shared_ref< T > 
 shared_ref< T > is used to signal that you would like a shared reference. To link the new reference handler to an existing blk instance. 
 *C++ Limitation* It would be ideal if we could alter the *&*. E.g. `template<typename Type> alias Type& = shared_ref<Type>`
@@ -62,26 +62,26 @@ A shared reference can also be created with `operator&()` on an existing referen
 	// This will make duck_one quack.
 	shared_duck->quack();
 ```
-Or you can explicitly express the desire for the behaviour to be of a shared_ref< T > 
+Or you can declare the type as shared_ref< T > 
 ```cpp
 	auto duck_one = make<duck>();
 	shared_ref<duck> shared_duck = duck_one;
 ```
-While the programmer might request a shared_ref, the underline allocator may not nessessary provide any runtime mechanisms to ensure that you are using these references correctly. The underline allocator might return a weak_ref< T > and warn the programmer of any misusages in a debug build.
+While the programmer might request a shared_ref, the underline allocator may not nessessary provide any runtime mechanisms to ensure that you are using these references correctly with regards to object lifetimes. The underline allocator might return a handle with equivalent behaviour as a weak_ref< T > and warn the programmer of any misusages in a debug build.
 
-Again, shared_ref< T > is only signaling that you desire this reference handle to influence the lifetime of this resource.
+Again, shared_ref< T > is only signaling that you desire this reference handle to influence the lifetime of this resource. If you are manually managing memory - It is a programming error if the lifetime of the holding ref< T > is destroyed while shared_ref< T > are still alive.
 
 #### weak_ref< T >
 weak_ref< T > is used to signal that this handle does not effect the lifetime of the underline reference or blk.
 
-If the allocator strategy used does not support shared_ref< T > in a meaningful way, it can return a weak_ref< T >. As weak_ref's do not contribute to the lifetime of the underline blk, It is possible these references can point to non existing blks. Null checks are recommended for weak_refs.
+And as such, It is possible these references can point to non existing blks. Null checks are recommended for weak_refs.
 *C++ Limitation* It would be ideal if we could alter the *. E.g. `template<typename Type> alias Type* = weak_ref<Type>`
 
 
 #### ref< T >
 This is the only real class type provided. weak_ref and shared_ref all create a ref< T > under the hood. 
 
-#### Value Semantics
+##### Value Semantics
 All reference handles have value semantics by default. Unless you explicitly ask for a shared_ref or weak_ref via the provided mechanisms, a deep-copy will be performed.
 ```cpp
 	auto duck_one = make<duck>();
@@ -90,6 +90,12 @@ All reference handles have value semantics by default. Unless you explicitly ask
 	auto duck_two = duck_one; // A full copy of duck_one is made.
 	auto duck_three = shared_duck; // A full copy of duck_one is made.
 ```
+
+##### RAII 
+ref< T > will automatically clean up the reference object, as standard with RAII memory management.
+
+##### Uninitalised ref< T >, shared_ref< T > and weak_ref< T >
+The literal value `uninitialised{}` is provided to express an uninitialised reference.
 
 ### Provided Examples
 This repository provides examples and benchmarking.
