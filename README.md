@@ -2,16 +2,16 @@
 This is an illustrative demo only. This is an example of a possible implementation of composable allocators, and a reference type that exhibits value semantics by default.
 
 # Allocators
-A Allocator interface is provided by alloc_t. Which defines the following methods;
+An Allocator interface is provided by `alloc_t`. Which defines the following methods;
 
 |Method|Description|
 |--|--|
 |***Allocations and Deallocations***||
 |`blk allocate(size_t size, size_t alignment)`|Create a data block, uninitialised space with alignment and size specified|
-|`void deallocate(blk& resource)`|Reclaims the memory represented by resource|
+|`void deallocate(blk& resource)`|Reclaims the memory represented by blk|
 |`void deallocateAll()`|Reclaims all memory handled by this allocator|
 |***Sharing***||
-|`bool will_free_on_deallocate(blk& resource)`|Ask the allocator if this memory will be reclaimed if the resource handle is returned.|
+|`bool will_free_on_deallocate(blk& resource)`|Ask the allocator if this memory will be reclaimed if the blk is returned.|
 |`blk share(blk& resource)`|Inform the allocator the intention of sharing|
 |***Reference Type Construction***
 |`template<class T, class AS = T, typename... Args> ref<AS> make(Args&&...)`|All Reference Types are constructed via the make() function.|
@@ -25,14 +25,14 @@ struct blk {
 	void* operator&() { return ptr; }
 };
 ```
-Methods that provide a way to create and destroy `blk` instances. a blk is effectively a replacement underline implementation of a *Type**. If we were able to do something like - `template<typename Type> alias Type* = blk<Type>;` this would have made this much easier.
+Methods that provide a way to create and destroy `blk` instances. a blk is effectively a replacement of underline implementation of a *Type** or *Type&*. 
+*C++ Limitation* If we were able to do something like - `template<typename Type> alias Type* = blk<Type>;` this would have made this much easier.
 #### Sharing
-These methods provide information to the allocator regarding the usage of a blk or reference type. Having mutiple links to a single object is common usage. This allows the allocator to track, and debug incorrect usages in this regard.
-This is not limited to RefCounting. stack_allocator uses an object_count to assert that when the allocator is destroyed, no references to the data it was managing still exist.
+These methods provide information to the allocator regarding the usage of a blk or reference type. Having multiple links to a blk/object is common usage. This allows the allocator to track, and/or debug incorrect usages in this regard.
+This is not limited to Reference Counting. The stack_allocator implementation uses an object_count to assert that when the allocator is destroyed, no references to the data it was managing still exist.
 #### Reference Type Construction
 All Reference Types are created with the `make()` function. This would ideally be the new operator, but it is not possible to override the return type of new. 
 make() returns a `ref<T>` which is a reference to type T.
-Ideally we would want to be able to do `template<typename Type> alias Type& = ref<Type>;`
 
 ##### Quick Example
 ```cpp
