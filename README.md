@@ -44,8 +44,9 @@ class duck {
 };
 
 stack_allocator ducks_in_a_row{};
-auto duck_one = make<duck>();
-auto duck_two = make<duck>();
+galloc = &ducks_in_a_row;
+auto duck_one = make<duck>(); // Use the globally assigned allocator.
+auto duck_two = ducks_in_a_row.make<duck>(); // Or specify the allocator to use.
 duck_one->quack();
 duck_two->quack();
 ```
