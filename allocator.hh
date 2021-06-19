@@ -245,6 +245,28 @@ class mallocator: public alloc_t {
 	}
 };
 
+class standard_mallocator: public alloc_t {
+ public:
+    blk allocate(size_t size, size_t) override {
+		auto p = malloc(size);
+		//printf("allocated [%p, %zu]\n", p, size);
+		return {p, size};
+    }
+    void deallocate(blk& resource) override {
+        //printf("freeing = %p\n", resource.ptr);
+		free(resource.ptr);
+    }
+
+    bool will_free_on_deallocate(blk&) override { return true; }
+    blk share(blk&) override {
+        assert(0, "malloc does not support sharing of references.");
+        return { };
+	}
+	void deallocateAll() override {
+		assert(0, "malloc does not support deallocateAll");
+	}
+};
+
 class stack_allocator: public alloc_t {
     enum class byte : unsigned char {};
 
@@ -281,7 +303,7 @@ class stack_allocator: public alloc_t {
         object_count = 0;
     }
 
-    ~stack_allocator() {
+    ~stack_allocator() override {
 		assert(object_count == 0, "References to data still exist");
 		if (object_count == 0) {
 			assert(_pos == 0, "References freed in poor order for stack_allocator usage");

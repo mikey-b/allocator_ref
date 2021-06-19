@@ -4,7 +4,7 @@
 	<string_view>
 	<iostream>
 
-1624114519 c:\users\mike brown\documents\projects\cpplib\allocator.hh
+1624115651 c:\users\mike brown\documents\projects\cpplib\allocator.hh
 	<cstdlib>
 	<cstdio>
 	<new>
@@ -20,4 +20,9 @@
 1624114100 source:c:\users\mike brown\documents\projects\cpplib\example_quack.cc
 	"allocator.hh"
 	<cstdio>
+
+1624115732 source:c:\users\mike brown\documents\projects\cpplib\benchmark.cc
+	"allocator.hh"
+	<benchmark/benchmark.h>
+	<string_view>
 
