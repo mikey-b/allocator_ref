@@ -170,7 +170,7 @@ struct creates_stuff2 {
 
 int main() {
 	galloc = &alloc;
-	// Polymorhpism is broken :( We need to pass in the type we want the handle to be in.
+	// Polymorphism is broken :( We need to pass in the type we want the handle to be in.
 	auto custom_allocator = make<stack_allocator, alloc_t>();
 	auto stuff2 = make<creates_stuff2>(&custom_allocator);
 };
