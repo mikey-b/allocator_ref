@@ -25,7 +25,7 @@ struct blk {
 	void* operator&() { return ptr; }
 };
 ```
-Methods that provide a way to create and destroy `blk` instances. a blk is effectively a replacement of underline implementation of a *Type** or *Type&*. 
+Methods that provide a way to create and destroy `blk` instances. a blk is effectively a replacement of underlying implementation of a *Type** or *Type&*. 
 *C++ Limitation* If we were able to do something like - `template<typename Type> alias Type* = blk<Type>;` this would have made this much easier.
 #### Sharing
 These methods provide information to the allocator regarding the usage of a blk or reference type. Having multiple links to a blk/object is common usage. This allows the allocator to track, and/or debug incorrect usages in this regard.
@@ -51,7 +51,7 @@ duck_one->quack();
 duck_two->quack();
 ```
 ### Reference Type Handles
-Reference handles are represented with the `ref<T>` type. This underline type represents the behaviour of all reference handles. In order to allow the programmer to specify alternative behaviour that is desired (shared, weak), syntax has to be provided.
+Reference handles are represented with the `ref<T>` type. This underlying type represents the behaviour of all reference handles. In order to allow the programmer to specify alternative behaviour that is desired (shared, weak), syntax has to be provided.
 #### shared_ref< T > 
 shared_ref< T > is used to signal that you would like a shared reference. To link the new reference handler to an existing blk instance. 
 *C++ Limitation* It would be ideal if we could alter the *&*. E.g. `template<typename Type> alias Type& = shared_ref<Type>`
@@ -68,12 +68,12 @@ Or you can declare the type as shared_ref< T >
 	auto duck_one = make<duck>();
 	shared_ref<duck> shared_duck = duck_one;
 ```
-While the programmer might request a shared_ref, the underline allocator may not nessessary provide any runtime mechanisms to ensure that you are using these references correctly with regards to object lifetimes. The underline allocator might return a handle with equivalent behaviour as a weak_ref< T > and warn the programmer of any misusages in a debug build.
+While the programmer might request a shared_ref, the underlying allocator may not nessessary provide any runtime mechanisms to ensure that you are using these references correctly with regards to object lifetimes. The underlying allocator might return a handle with equivalent behaviour as a weak_ref< T > and warn the programmer of any misusages in a debug build.
 
 Again, shared_ref< T > is only signaling that you desire this reference handle to influence the lifetime of this resource. If you are manually managing memory - It is a programming error if the lifetime of the holding ref< T > is destroyed while shared_ref< T > are still alive.
 
 #### weak_ref< T >
-weak_ref< T > is used to signal that this handle does not effect the lifetime of the underline reference or blk.
+weak_ref< T > is used to signal that this handle does not effect the lifetime of the underlying reference or blk.
 
 And as such, It is possible these references can point to non existing blks. Null checks are recommended for weak_refs.
 *C++ Limitation* It would be ideal if we could alter the *. E.g. `template<typename Type> alias Type* = weak_ref<Type>`
@@ -122,7 +122,7 @@ blk of_t{t};
 alloc.deallocate(of_t);
 ```
 *Improvements:* Its noted that this is clunky, It could be useful to have `size_t alignment` have a default value of `alignof(max_align_t)`, which would give behaviour equivalent to standard malloc.
-There is also no conversions at present to and from a raw pointer. The point of this project is to highlight that the underline type of a struct pointer (*Type**) or reference type ref (*Type&*) should have a different underline representation. if `test*` was actually a `blk` under the hood, all these issues would automatically go away.
+There is also no conversions at present to and from a raw pointer. The point of this project is to highlight that the underlying type of a struct pointer (*Type**) or reference type ref (*Type&*) should have a different underlying representation. if `test*` was actually a `blk` under the hood, all these issues would automatically go away.
 
 #### Quick Example: Configuring the Global Allocator
 This example provides 2 concrete allocators, mallocator and stack_allocator. These can be extended with RefCounted<>. In order to select the global allocator, set `galloc = ` to a location of an instance of one of these allocators.
