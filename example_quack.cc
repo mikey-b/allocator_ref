@@ -52,4 +52,10 @@ int main() {
 
 						// If a weak_ref
 						// This is an invalid reference. Undefined behaviour! Should really throw an exception.
+
+
+	auto test = make_unique<duck>("test2");
+	auto test2 = galloc->move(test);
+
+	test2->quack();
 }

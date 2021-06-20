@@ -20,6 +20,7 @@ static void assert(bool predicate, const char* msg = "") {
 }
 #endif
 
+template<class T> class unique_ref;
 template<class T> class shared_ref;
 template<class T> class weak_ref;
 template<class T> class ref;
@@ -51,6 +52,11 @@ class alloc_t {
 	virtual blk share(blk& resource) = 0;
 
 	template<class T, class AS = T, typename... Args> ref<AS> make(Args&&...);
+
+	template<class T, class AS = T, typename... Args> unique_ref<AS> make_unique(Args&&...);
+	template<class T, class AS = T> void do_move(ref<T>& original);
+	template<class T, class AS = T> typename std::remove_reference<T>::type&& move(T&& original );
+
 	virtual ~alloc_t() = default;
 };
 
@@ -58,18 +64,18 @@ class alloc_t {
 
 struct uninitialised{};
 struct weak_flag {};
+enum class ref_type { weak_ref, unique_ref, shared_ref };
 
 template<class T>
 class ref {
- protected:
-    blk m_data;
-    alloc_t* m_alloc;
-    bool m_weak_ref;
-
+   	using type = ref_type;
  public:
+ 	type m_ref_type;
+ 	blk m_data;
+	alloc_t* m_alloc;
 	// --- Constructors ---
-	ref(blk& data, alloc_t* alloc): m_data(data), m_alloc(alloc), m_weak_ref(false) {}
-	ref(blk& data, alloc_t* alloc, weak_flag): m_data(data), m_alloc(alloc), m_weak_ref(true) {}
+	ref(blk& data, alloc_t* alloc): m_data(data), m_alloc(alloc), m_ref_type(type::shared_ref) {}
+	ref(blk& data, alloc_t* alloc, weak_flag): m_data(data), m_alloc(alloc), m_ref_type(type::weak_ref) {}
 
 	// --- Initialisation Constructors ---
 
@@ -77,13 +83,13 @@ class ref {
 	ref(uninitialised const&) {
 		m_data = {nullptr, 0};
 		m_alloc = nullptr;
-		m_weak_ref = false;
+		m_ref_type = type::weak_ref;
 	}
 
 	// --- Copy Constructor ---
 	ref(ref const& original) {
 		assert(m_data.ptr == nullptr);
-		m_weak_ref = false;
+		m_ref_type = type::shared_ref;
 		m_alloc = original.m_alloc;
 		//printf("copy constructor, m_alloc = %p\n", m_alloc);
 		m_data = m_alloc->allocate(sizeof(T), alignof(T));
@@ -99,14 +105,14 @@ class ref {
 
     ref& operator=(ref& original) {
         // Clean up the old data we we're holding.
-        if ((m_data.hasData()) && (!m_weak_ref)) {
+        if ((m_data.hasData()) && ( m_ref_type != type::weak_ref) ) {
             if (m_alloc->will_free_on_deallocate(m_data)) {
                 (static_cast<T*>(m_data.ptr))->~T();
             }
             m_alloc->deallocate(m_data);
         }
 
-        m_weak_ref = false;
+        m_ref_type = type::shared_ref;
         m_alloc = original.m_alloc;
         m_data = m_alloc->allocate(sizeof(T), alignof(T));
         assert(m_data.ptr);
@@ -120,25 +126,52 @@ class ref {
         return *this;
     }
 
+	// --- Move Constructor ---
+	ref(ref&& original) {
+		assert(m_data.ptr == nullptr);
+		assert(m_alloc != nullptr);
+
+		std::swap(m_alloc, original.m_alloc);
+		std::swap(m_data, original.m_data);
+		std::swap(m_ref_type, original.m_ref_type);
+
+		//m_ref_type = type::unique_ref;
+		//m_alloc = original.m_alloc;
+		//printf("copy constructor, m_alloc = %p\n", m_alloc);
+		//m_data = m_alloc->allocate(sizeof(T), alignof(T));
+		//assert(m_data.ptr);
+		//auto org_obj = static_cast<T*>(original.m_data.ptr);
+		//auto new_obj = static_cast<T*>(m_data.ptr);
+		//*new_obj = *org_obj;
+		//new (m_data.ptr) T(*org_obj);
+
+
+
+		//printf("copied [%p] to [%p]\n", original.m_data.ptr, &m_data);
+		puts("moved !!");
+		assert(m_alloc);
+	}
+
     ref& operator=(ref&& original) {
         // Clean up the old data we we're holding.
-        if ((m_data.hasData()) && (!m_weak_ref)) {
+        if ((m_data.hasData()) && (m_ref_type != type::weak_ref)) {
             if (m_alloc->will_free_on_deallocate(m_data)) {
                 (static_cast<T*>(m_data.ptr))->~T();
             }
             m_alloc->deallocate(m_data);
         }
 
-        m_weak_ref = original.m_weak_ref;
+        m_ref_type = original.m_ref_type;
         m_alloc = original.m_alloc;
         m_data = original.m_data;
 
-        original.m_weak_ref = false;
+        original.m_ref_type = type::shared_ref;
         original.m_alloc = nullptr;
         original.m_data.ptr = nullptr;
         original.m_data.m_size = 0;
         //printf("shared = [%p] to [%p]\n", original.m_data.ptr, &m_data);
         assert(m_alloc);
+        puts("moved!");
         return *this;
     }
 
@@ -179,7 +212,7 @@ class ref {
     // --- Deconstructor ---
     ~ref() {
         //printf("testing for dealloc [%d, %d]\n", !m_data, m_weak_ref);
-        if (m_weak_ref) return;
+        if (m_ref_type == type::weak_ref) return;
 
         if (m_data.hasData()) {
 			//printf("%d\n", m_alloc->will_free_on_deallocate(m_data));
@@ -202,6 +235,10 @@ template<class T> class weak_ref: public ref<T> {
  public:
     weak_ref(blk data, alloc_t* alloc): ref<T>(data, alloc, weak_flag{}) {}
 };
+template<class T> class unique_ref: public ref<T> {
+ public:
+	unique_ref(blk data, alloc_t* alloc): ref<T>(data, alloc) {}
+};
 
 // --- Default Allocator Method ---
 template<class T, class AS, typename... Args>
@@ -212,6 +249,31 @@ ref<AS> alloc_t::make(Args&&... args)  {
     return {blk, this};
 }
 
+template<class T, class AS, typename... Args>
+unique_ref<AS> alloc_t::make_unique(Args&&... args) {
+    static_assert(std::is_base_of<AS,T>::value);
+    auto blk = this->allocate(sizeof(T), alignof(T));
+    new (blk.ptr) T(std::forward<Args>(args)...);
+    return {blk, this};
+}
+
+template<class T, class AS>
+void alloc_t::do_move(ref<T>& original) {
+	if (original.m_alloc == this) {
+		return; // The same allocator, so just move internals of handle.
+	} else {
+		ref<T> cpy = uninitialised{};
+		cpy.m_alloc = this;
+		cpy = original; // Copy to other allocator.
+		return;
+	}
+}
+
+template<class T, class AS>
+typename std::remove_reference<T>::type&& alloc_t::move(T&& original) {
+	this->do_move(original);
+	return ((typename std::remove_reference<T>::type&&) original);
+}
 
 // --- Provided Allocators ---
 class mallocator: public alloc_t {
@@ -352,7 +414,7 @@ class RefCounted: public baseAllocator {
         }
     }
 
-    ~RefCounted() {
+    ~RefCounted() override {
     	assert(object_count == 0, "Live references still exist");
 		if (object_count != 0) baseAllocator::deallocateAll();
     }
@@ -366,4 +428,17 @@ ref<AS> make(Args&&... args) {
     static_assert(std::is_base_of<AS, T>::value);
 	assert(galloc != nullptr);
     return galloc->make<T, AS>(std::forward<Args>(args)...);
+}
+
+template<class T, class AS = T, typename... Args>
+ref<AS> make_unique(Args&&... args) {
+    static_assert(std::is_base_of<AS, T>::value);
+	assert(galloc != nullptr);
+    return galloc->make_unique<T, AS>(std::forward<Args>(args)...);
+}
+
+template<class T>
+typename std::remove_reference<T>::type&& move(T&& original) {
+	galloc->do_move(original);
+	return ((typename std::remove_reference<T>::type&&) original);
 }
